@@ -1,22 +1,34 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"strings"
 )
 
-func GetClientIpFromRequest(r *http.Request) string {
-	clientIp := r.Header.Get("X-Original-Forwarded-For")
+func GetClientIpFromRequest(r *http.Request) (clientIp string) {
+	clientIp = r.Header.Get("X-Original-Forwarded-For")
+
 	if clientIp == "" {
 		clientIp = r.Header.Get("X-Real-IP")
 	}
+
 	if clientIp == "" {
 		clientIp = r.Header.Get("X-Forwarded-For")
 	}
+
 	if clientIp == "" {
-		clientIp = strings.Split(r.RemoteAddr, ":")[0]
+		clientIp, _, err := net.SplitHostPort(r.RemoteAddr)
+
+		if err != nil {
+			return ""
+		}
+
+		return clientIp
 	}
+
 	clientIpChunks := strings.Split(clientIp, ",")
+
 	return strings.Trim(clientIpChunks[len(clientIpChunks)-1], " ")
 }
 
